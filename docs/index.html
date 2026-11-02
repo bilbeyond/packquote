@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>包装材料报价智能体 · 桌面版</title>
+<link rel="stylesheet" href="assets/styles.css">
+</head>
+<body>
+<div class="app">
+
+  <!-- ==================== 左侧导航 ==================== -->
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="brand-logo">包</div>
+      <div class="brand-text">
+        <span class="brand-name">包装报价智能体</span>
+        <span class="brand-sub">材料 · 面积 · 阶梯报价</span>
+      </div>
+    </div>
+
+    <nav class="nav" id="nav">
+      <button class="navbtn is-on" data-view="chat"><span class="ni">💬</span><span>对话工作台</span></button>
+      <button class="navbtn" data-view="materials"><span class="ni">📋</span><span>材料价目表</span></button>
+      <button class="navbtn" data-view="kb"><span class="ni">📚</span><span>知识库</span></button>
+      <button class="navbtn" data-view="quotes"><span class="ni">🧾</span><span>报价单</span><span class="nbadge" id="badgeQuotes">0</span></button>
+      <button class="navbtn" data-view="settings"><span class="ni">⚙️</span><span>大模型设置</span></button>
+    </nav>
+
+    <div class="side-block">
+      <div class="side-title">常用场景</div>
+      <div class="chips" id="sceneChips"></div>
+    </div>
+
+    <div class="side-block grow">
+      <div class="side-title">会话</div>
+      <button class="newchat" id="btnNewChat">＋ 新对话</button>
+      <div class="sessions" id="sessions"></div>
+    </div>
+
+    <div class="side-foot">
+      <div class="dot" id="engineDot"></div>
+      <span id="engineText">本地报价引擎</span>
+    </div>
+  </aside>
+
+  <!-- ==================== 主区 ==================== -->
+  <main class="main">
+
+    <!-- ---------- 对话 ---------- -->
+    <section class="view is-on" id="view-chat">
+      <header class="chat-head">
+        <div>
+          <h1>智能报价对话</h1>
+          <p class="sub">说清做什么包装、大概数量和尺寸，我给材料推荐、成本拆解和三档报价</p>
+        </div>
+        <div class="head-right">
+          <span class="tag" id="modelTag">本地引擎</span>
+          <label class="switch">
+            <input type="checkbox" id="toggleLLM">
+            <span>接入大模型</span>
+          </label>
+        </div>
+      </header>
+
+      <div class="msgs" id="msgs"></div>
+
+      <div class="composer">
+        <div class="ask-row" id="askRow"></div>
+        <div class="compose-box">
+          <textarea id="input" rows="1" placeholder="例如：我要做一个汉堡的包装，5000 个，外送用"></textarea>
+          <button class="send" id="btnSend">发送</button>
+        </div>
+        <div class="compose-hint">Enter 发送 · Shift+Enter 换行 · 数字、尺寸、材料说得越具体，报价越准</div>
+      </div>
+    </section>
+
+    <!-- ---------- 价目表 ---------- -->
+    <section class="view" id="view-materials">
+      <header class="page-head">
+        <div>
+          <h1>材料价目表</h1>
+          <p class="sub">纸类按 元/㎡ 计价，由克重 × 吨价推导；可直接编辑、新增或导入 CSV</p>
+        </div>
+        <div class="head-actions">
+          <button class="btn" id="btnAddMat">＋ 新增材料</button>
+          <button class="btn" id="btnImportCsv">导入 CSV</button>
+          <button class="btn primary" id="btnExportCsv">导出 CSV</button>
+          <button class="btn ghost" id="btnResetMat">恢复内置</button>
+        </div>
+      </header>
+
+      <div class="toolbar">
+        <input class="search" id="matSearch" placeholder="搜材料名 / 别名 / 供应商">
+        <div class="filters" id="matCats"></div>
+        <span class="count" id="matCount"></span>
+      </div>
+
+      <div class="table-wrap">
+        <table class="grid" id="matTable">
+          <thead>
+            <tr><th>材料</th><th>分类</th><th>规格</th><th class="num">单价</th><th>计价</th><th>供应商</th><th>更新</th><th>趋势</th><th class="op">操作</th></tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+      <input type="file" id="csvFile" accept=".csv,.txt" hidden>
+    </section>
+
+    <!-- ---------- 知识库 ---------- -->
+    <section class="view" id="view-kb">
+      <header class="page-head">
+        <div>
+          <h1>知识库</h1>
+          <p class="sub">上传价目表、工艺规范、供应商报价单，回答时会引用原文</p>
+        </div>
+        <div class="head-actions">
+          <span class="stat-chip" id="kbStat"></span>
+        </div>
+      </header>
+
+      <div class="drop" id="drop">
+        <div class="drop-inner">
+          <div class="drop-icon">⬆</div>
+          <div class="drop-t">把文件拖到这里，或点击选择</div>
+          <div class="drop-s">支持 docx / txt / md / csv / pdf（pdf 需有文本层）</div>
+        </div>
+        <input type="file" id="kbFile" multiple hidden>
+      </div>
+
+      <div class="kb-list" id="kbList"></div>
+    </section>
+
+    <!-- ---------- 报价单 ---------- -->
+    <section class="view" id="view-quotes">
+      <header class="page-head">
+        <div>
+          <h1>报价单</h1>
+          <p class="sub">对话里点「存入报价单」的记录都在这里</p>
+        </div>
+        <div class="head-actions">
+          <button class="btn primary" id="btnExportQuotes">导出 CSV</button>
+        </div>
+      </header>
+      <div class="quote-list" id="quoteList"></div>
+    </section>
+
+    <!-- ---------- 设置 ---------- -->
+    <section class="view" id="view-settings">
+      <header class="page-head">
+        <div>
+          <h1>大模型设置</h1>
+          <p class="sub">OpenAI 兼容协议：DeepSeek、通义千问、Kimi、智谱、OpenAI、本地 Ollama 都能接</p>
+        </div>
+      </header>
+
+      <div class="settings">
+        <div class="card">
+          <div class="card-head">连接参数</div>
+          <label class="field">
+            <span>启用大模型润色</span>
+            <input type="checkbox" id="cfgEnabled">
+            <em>关闭时全部由本地引擎回答，数字一样准</em>
+          </label>
+          <label class="field col">
+            <span>API Base URL</span>
+            <input type="text" id="cfgBaseUrl" placeholder="https://api.deepseek.com/v1">
+            <em>各家兼容地址：DeepSeek <code>https://api.deepseek.com/v1</code> · 通义 <code>https://dashscope.aliyuncs.com/compatible-mode/v1</code> · Kimi <code>https://api.moonshot.cn/v1</code></em>
+          </label>
+          <label class="field col">
+            <span>API Key</span>
+            <input type="password" id="cfgApiKey" placeholder="sk-...">
+            <em>仅保存在本机（服务端模式存 data/config.json，静态版存浏览器本地），不会发给任何第三方</em>
+          </label>
+          <div class="field-row">
+            <label class="field col">
+              <span>模型</span>
+              <input type="text" id="cfgModel" placeholder="deepseek-chat">
+            </label>
+            <label class="field col">
+              <span>温度</span>
+              <input type="number" id="cfgTemp" step="0.1" min="0" max="1" placeholder="0.4">
+            </label>
+          </div>
+          <div class="card-actions">
+            <button class="btn" id="btnTestLlm">测试连接</button>
+            <button class="btn primary" id="btnSaveCfg">保存配置</button>
+          </div>
+          <div class="test-out" id="testOut"></div>
+        </div>
+
+        <div class="card">
+          <div class="card-head">回答机制说明</div>
+          <ul class="notes">
+            <li>价格、面积、克重、阶梯折扣<strong>全部由本地引擎实算</strong>，模型只负责理解意图、解释推荐理由和组织话术。</li>
+            <li>System prompt 中明确禁止模型编造价格；若模型返回异常，会自动降级为本地引擎回答并提示原因。</li>
+            <li>没有配置 Key 也能正常使用：场景推荐、材料匹配、报价计算都是本地能力。</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- ==================== 右侧上下文 ==================== -->
+  <aside class="ctx" id="ctx">
+    <div class="ctx-head">
+      <span>推荐方案</span>
+      <span class="ctx-tag" id="ctxScene">—</span>
+    </div>
+    <div class="ctx-body" id="ctxBody">
+      <div class="ctx-empty">
+        <div class="ce-icon">🧩</div>
+        <p>在左边描述你的包装需求，例如：</p>
+        <p class="ce-q">「我要做一个汉堡的包装，5000 个」</p>
+        <p>这里会实时显示材料推荐、成本拆解和三档报价对比。</p>
+      </div>
+    </div>
+  </aside>
+</div>
+
+<!-- 材料编辑弹层 -->
+<div class="modal" id="matModal">
+  <div class="modal-box">
+    <div class="modal-head"><span id="matModalTitle">新增材料</span><button class="x" id="matModalClose">✕</button></div>
+    <div class="modal-body">
+      <div class="field-row">
+        <label class="field col"><span>名称</span><input id="mName" placeholder="如 食品级白卡 350g"></label>
+        <label class="field col"><span>分类</span>
+          <select id="mCat"><option value="paper">纸类</option><option value="plastic">塑料类</option><option value="metal">金属类</option><option value="cushion">缓冲材料</option><option value="aux">辅料</option></select>
+        </label>
+      </div>
+      <div class="field-row">
+        <label class="field col"><span>规格</span><input id="mSpec" placeholder="350g · 食品级"></label>
+        <label class="field col"><span>计价单位</span>
+          <select id="mUnit"><option>元/㎡</option><option>元/张</option><option>元/件</option><option>元/卷</option><option>元/米</option><option>元/kg</option></select>
+        </label>
+      </div>
+      <div class="field-row">
+        <label class="field col"><span>克重 g/㎡（纸类）</span><input id="mGram" type="number" placeholder="350"></label>
+        <label class="field col"><span>吨价 元/吨（纸类）</span><input id="mTon" type="number" placeholder="7400"></label>
+      </div>
+      <div class="field-row">
+        <label class="field col"><span>单价（非纸类直接填）</span><input id="mPrice" type="number" step="0.0001" placeholder="0"></label>
+        <label class="field col"><span>供应商</span><input id="mSupplier" placeholder="自定义"></label>
+      </div>
+      <label class="field col"><span>别名（用 | 分隔）</span><input id="mAlias" placeholder="白卡|食品卡"></label>
+      <label class="field col"><span>备注</span><input id="mNote" placeholder="适用场景"></label>
+      <div class="hint" id="mFormula"></div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn ghost" id="matModalCancel">取消</button>
+      <button class="btn primary" id="matModalSave">保存</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+<script src="assets/pq-core.js"></script>
+  <script src="assets/app.js"></script>
+</body>
+</html>

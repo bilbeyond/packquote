@@ -1,0 +1,9 @@
+# 运行时数据（含 API Key 与用户上传的文档，绝不提交）
+data/
+
+# 本地临时文件
+.sprofile/
+.profile/
+.shot-*.png
+*.zip
+*.log
