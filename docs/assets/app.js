@@ -362,7 +362,7 @@
     /* 静态版：全部在浏览器内计算，不走网络 */
     if (MODE === 'static') {
       S()
-        .chat({ text, history, useLLM }, handle)
+        .chat({ text, history, useLLM }, (type, payload) => handle({ type, payload }))
         .then(finish)
         .catch(fail)
       return
